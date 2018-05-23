@@ -225,19 +225,19 @@ PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/ssl/bin:/usr/sfw/bi
 export PATH
 
 # Who to page when an expired certificate is detected (cmdline: -e)
-ADMIN="root"
+ADMIN="support@niesc.k12.in.us"
 
 # Email sender address for alarm notifications
-SENDER="postmaster@localhost.localdomain"
+SENDER="nebsawebserver@nebsa.org"
 
 # Number of days in the warning threshhold (cmdline: -x)
-WARNDAYS=30
+WARNDAYS=15
 
 # If QUIET is set to TRUE, don't print anything on the console (cmdline: -q)
 QUIET="FALSE"
 
 # Don't send E-mail by default (cmdline: -a)
-ALARM="FALSE"
+ALARM="TRUE"
 
 # Don't run as a Nagios plugin by default (cmdline: -n)
 NAGIOS="FALSE"
@@ -253,6 +253,9 @@ CERTTYPE="pem"
 
 # Protocol version to use (cmdline: -v)
 VERSION=""
+
+# AutoRenewal LetsEncrypt Certificate
+AUTORENEWAL="TRUE"
 
 # Enable debugging
 DEBUG=0
@@ -767,6 +770,11 @@ check_file_status() {
         then
             send_mail ${SENDER} ${ADMIN} "Certificate for ${HOST} \"(CN: ${COMMONNAME})\" will expire in ${WARNDAYS}-days or less" \
                 "The SSL certificate for ${HOST} \"(CN: ${COMMONNAME})\" will expire on ${CERTDATE}"
+	    if [ "${AUTORENEWAL}" = "TRUE" ]
+            then
+		/usr/bin/certbot renew
+		systemctl restart nginx
+	    fi
         fi
         prints ${HOST} ${PORT} "Expiring" "${CERTDATE}" "${CERTDIFF}" "${CERTISSUER}" "${COMMONNAME}" "${SERIAL}"
         RETCODE_LOCAL=1
