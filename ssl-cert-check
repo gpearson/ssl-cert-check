@@ -87,7 +87,7 @@ ADMIN="support@niesc.k12.in.us"
 SENDER="nebsawebserver@nebsa.org"
 
 # Number of days in the warning threshhold (cmdline: -x)
-WARNDAYS=70
+WARNDAYS=20
 
 # If QUIET is set to TRUE, don't print anything on the console (cmdline: -q)
 QUIET="FALSE"
@@ -630,17 +630,15 @@ check_file_status() {
     then
         if [ "${ALARM}" = "TRUE" ]
         then
-            ## send_mail ${SENDER} ${ADMIN} "Certificate for ${HOST} \"(CN: ${COMMONNAME})\" will expire in ${WARNDAYS}-days or less" \
-            ##    "The SSL certificate for ${HOST} \"(CN: ${COMMONNAME})\" will expire on ${CERTDATE}"
+            send_mail ${SENDER} ${ADMIN} "Certificate for ${HOST} \"(CN: ${COMMONNAME})\" will expire in ${WARNDAYS}-days or less" \
+                "The SSL certificate for ${HOST} \"(CN: ${COMMONNAME})\" will expire on ${CERTDATE}" \
+                "When the certificate days left reach ${LETSENCRYPTDAYSTORENEW}, we will try to renew autopmatically. "
             if [ "${LETSENCRYPTRENEWAL}" = "TRUE" ] && [ "${ZIMBRAMAIL}" = "FALSE" ]
             then
                 if [ ${CERTDIFF} -lt ${LETSENCRYPTDAYSTORENEW} ]
                 then
-                    echo ${CERTBOT} renew "ZimbraMail = FALSE"
-                    # systemctl restart nginx
-                else
-                    echo "Zimbra Mail IS False"
-                    echo "Certificate days left is not lower ${LETSENCRYPTDAYSTORENEW}"
+                    ${CERTBOT} renew
+                    systemctl restart nginx
                 fi
             elif [ "${LETSENCRYPTRENEWAL}" = "TRUE" ] && [ "${ZIMBRAMAIL}" = "TRUE" ]
             then
@@ -648,9 +646,6 @@ check_file_status() {
                 then
                     echo ${CERTBOT} renew "ZimbraMail = True"
                     # systemctl restart nginx
-                else
-                    echo "Zimbra Mail is True"
-                    echo "Certificate days left is not lower ${LETSENCRYPTDAYSTORENEW}"
                 fi
             fi
         fi
